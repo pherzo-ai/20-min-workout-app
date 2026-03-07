@@ -8,7 +8,7 @@ function buildSequence(exercises) {
       sequence.push({ type: "work", exercise: ex, round, exerciseIndex: idx });
       const isLast = round === ROUNDS_PER_CIRCUIT && idx === exercises.length - 1;
       if (!isLast) {
-        sequence.push({ type: "rest", exercise: ex, nextExercise: exercises[idx + 1] || exercises[0], round });
+        sequence.push({ type: "rest", exercise: ex, nextExercise: exercises[idx + 1] || exercises[0], round, exerciseIndex: idx });
       }
     });
   }
@@ -219,15 +219,20 @@ export default function TimerScreen({ circuit, onComplete, onBack }) {
         <div className="exercise-progress">
           {circuit.exercises.map((ex, i) => (
             <div key={i} className="exercise-dot-group">
-              <div className="exercise-dot-label">{ex.split(" ").slice(-1)[0]}</div>
+              <div className="exercise-dot-label">{circuit.labels?.[i] ?? ex.split(" ").slice(-1)[0]}</div>
               <div className="exercise-dot-row">
                 {Array.from({ length: ROUNDS_PER_CIRCUIT }, (_, r) => {
                   const rNum = r + 1;
                   let dotState = "pending";
                   if (rNum < (currentStep?.round ?? 1)) dotState = "done";
                   else if (rNum === (currentStep?.round ?? 1)) {
-                    if (currentStep?.exerciseIndex > i) dotState = "done";
-                    else if (currentStep?.exerciseIndex === i) dotState = phase === "work" ? "active" : "done";
+                    if (phase === "work") {
+                      if (currentStep.exerciseIndex > i) dotState = "done";
+                      else if (currentStep.exerciseIndex === i) dotState = "active";
+                    } else {
+                      // during rest: the exercise at exerciseIndex just finished
+                      if (currentStep.exerciseIndex >= i) dotState = "done";
+                    }
                   }
                   return <div key={r} className={`exercise-dot exercise-dot--${dotState}`} />;
                 })}

@@ -12,6 +12,7 @@ export const circuits = [
       "Jump Rope",
       "Dumbbell Bench Press",
     ],
+    labels: ["Squats", "Pushups", "Jumprope", "Presses"],
   },
   {
     id: 2,
@@ -22,6 +23,7 @@ export const circuits = [
       "Bent-Over Dumbbell Rows",
       "Jump Rope",
     ],
+    labels: ["Deadlifts", "Presses", "Rows", "Jumprope"],
   },
   {
     id: 3,
@@ -32,5 +34,6 @@ export const circuits = [
       "Push Up Shoulder Tap",
       "Jump Rope",
     ],
+    labels: ["Rows", "Squats", "Taps", "Jumprope"],
   },
 ];
