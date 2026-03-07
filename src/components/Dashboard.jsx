@@ -1,6 +1,6 @@
-import { circuits, ROUNDS_PER_CIRCUIT } from "../workoutData";
+import { ROUNDS_PER_CIRCUIT } from "../workoutData";
 
-export default function Dashboard({ completedCircuits, activeCircuit, onSelectCircuit }) {
+export default function Dashboard({ circuits, completedCircuits, activeCircuit, onSelectCircuit }) {
   return (
     <div className="screen dashboard-screen">
       <div className="dashboard-header">
