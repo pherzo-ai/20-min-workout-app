@@ -47,10 +47,10 @@ export default function Dashboard({ completedCircuits, activeCircuit, onSelectCi
               </ul>
               {!isCompleted && (
                 <button
-                  className={`btn ${isCurrent ? "btn-primary" : "btn-secondary"} circuit-start-btn`}
+                  className="btn btn-primary circuit-start-btn"
                   onClick={(e) => { e.stopPropagation(); onSelectCircuit(circuit.id); }}
                 >
-                  {isCurrent ? "Continue Circuit" : "Start Circuit"}
+                  Start Circuit
                 </button>
               )}
             </div>

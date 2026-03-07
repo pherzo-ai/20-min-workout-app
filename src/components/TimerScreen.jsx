@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { WORK_DURATION, REST_DURATION, ROUNDS_PER_CIRCUIT } from "../workoutData";
 
 function buildSequence(exercises) {
@@ -19,28 +19,18 @@ function CircularProgress({ progress, phase }) {
   const radius = 90;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - progress * circumference;
-
   return (
     <svg className="timer-ring" viewBox="0 0 200 200">
+      <circle cx="100" cy="100" r={radius} fill="none" stroke="var(--ring-track)" strokeWidth="12" />
       <circle
-        cx="100"
-        cy="100"
-        r={radius}
-        fill="none"
-        stroke="var(--ring-track)"
-        strokeWidth="12"
-      />
-      <circle
-        cx="100"
-        cy="100"
-        r={radius}
+        cx="100" cy="100" r={radius}
         fill="none"
         stroke={phase === "work" ? "var(--ring-work)" : "var(--ring-rest)"}
         strokeWidth="12"
         strokeLinecap="round"
         strokeDasharray={circumference}
         strokeDashoffset={offset}
-        style={{ transition: "stroke-dashoffset 0.5s linear, stroke 0.3s" }}
+        style={{ transition: "stroke 0.3s" }}
         transform="rotate(-90 100 100)"
       />
     </svg>
@@ -50,91 +40,106 @@ function CircularProgress({ progress, phase }) {
 export default function TimerScreen({ circuit, onComplete, onBack }) {
   const sequence = useRef(buildSequence(circuit.exercises));
   const [stepIndex, setStepIndex] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const intervalRef = useRef(null);
+  const [displayTime, setDisplayTime] = useState(null);
+  const [progress, setProgress] = useState(1);
 
-  const currentStep = sequence.current[stepIndex];
-  const totalSteps = sequence.current.length;
+  // All mutable timing state lives in refs so the RAF loop always sees current values
+  const rafRef = useRef(null);
+  const stepIndexRef = useRef(0);
+  const stepStartRef = useRef(null);
+  const stepDurationRef = useRef(null);
+  const pausedElapsedRef = useRef(0);
+  const isPausedRef = useRef(false);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
-  const startStep = useCallback((index) => {
-    const step = sequence.current[index];
-    const duration = step.type === "work" ? WORK_DURATION : REST_DURATION;
-    setTimeLeft(duration);
-    setIsRunning(true);
-    setIsPaused(false);
-  }, []);
-
-  // Clear interval on unmount
-  useEffect(() => {
-    return () => clearInterval(intervalRef.current);
-  }, []);
-
-  // Countdown logic
-  useEffect(() => {
-    if (!isRunning || isPaused) {
-      clearInterval(intervalRef.current);
+  // tickRef holds the RAF callback — defined as a ref so it always reads latest values
+  const tickRef = useRef(null);
+  tickRef.current = () => {
+    if (isPausedRef.current) return;
+    const elapsed = performance.now() - stepStartRef.current;
+    const remaining = Math.max(0, stepDurationRef.current - elapsed);
+    setDisplayTime(Math.ceil(remaining / 1000));
+    setProgress(remaining / stepDurationRef.current);
+    if (remaining <= 0) {
+      const nextIndex = stepIndexRef.current + 1;
+      if (nextIndex >= sequence.current.length) {
+        setIsRunning(false);
+        onCompleteRef.current();
+        return;
+      }
+      // Brief pause between steps for visual clarity, then auto-start next
+      setTimeout(() => startStep(nextIndex), 300);
       return;
     }
-    clearInterval(intervalRef.current);
-    intervalRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(intervalRef.current);
-          // Move to next step
-          setStepIndex((si) => {
-            const next = si + 1;
-            if (next >= sequence.current.length) {
-              setIsRunning(false);
-              onComplete();
-              return si;
-            }
-            setTimeout(() => startStep(next), 300);
-            return next;
-          });
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(intervalRef.current);
-  }, [isRunning, isPaused, startStep, onComplete]);
+    rafRef.current = requestAnimationFrame(() => tickRef.current());
+  };
+
+  const cancelRaf = () => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = null;
+  };
+
+  const startStep = (index) => {
+    const step = sequence.current[index];
+    const durationMs = (step.type === "work" ? WORK_DURATION : REST_DURATION) * 1000;
+    stepIndexRef.current = index;
+    stepDurationRef.current = durationMs;
+    stepStartRef.current = performance.now();
+    pausedElapsedRef.current = 0;
+    isPausedRef.current = false;
+    setStepIndex(index);
+    setProgress(1);
+    setDisplayTime(step.type === "work" ? WORK_DURATION : REST_DURATION);
+    cancelRaf();
+    rafRef.current = requestAnimationFrame(() => tickRef.current());
+  };
 
   const handleStart = () => {
+    setIsRunning(true);
     startStep(0);
   };
 
   const handlePauseResume = () => {
-    setIsPaused((p) => !p);
+    if (!isPausedRef.current) {
+      isPausedRef.current = true;
+      pausedElapsedRef.current = performance.now() - stepStartRef.current;
+      cancelRaf();
+      setIsPaused(true);
+    } else {
+      isPausedRef.current = false;
+      stepStartRef.current = performance.now() - pausedElapsedRef.current;
+      setIsPaused(false);
+      rafRef.current = requestAnimationFrame(() => tickRef.current());
+    }
   };
 
   const handleSkip = () => {
-    clearInterval(intervalRef.current);
-    const next = stepIndex + 1;
-    if (next >= sequence.current.length) {
+    cancelRaf();
+    isPausedRef.current = false;
+    const nextIndex = stepIndexRef.current + 1;
+    if (nextIndex >= sequence.current.length) {
       setIsRunning(false);
-      onComplete();
+      onCompleteRef.current();
       return;
     }
-    setStepIndex(next);
-    setTimeout(() => startStep(next), 100);
+    setIsPaused(false);
+    startStep(nextIndex);
   };
 
+  useEffect(() => () => cancelRaf(), []);
+
+  const currentStep = sequence.current[stepIndex];
   const phase = currentStep?.type || "work";
   const duration = phase === "work" ? WORK_DURATION : REST_DURATION;
-  const progress = timeLeft !== null ? timeLeft / duration : 1;
 
   const workSteps = sequence.current.filter((s) => s.type === "work");
-  const currentWorkIndex = currentStep?.type === "work"
-    ? workSteps.findIndex((s) => s === currentStep)
-    : workSteps.findIndex((s) => s.round === currentStep?.round && s.exerciseIndex === (currentStep?.exerciseIndex ?? -1)) - 1;
-  const completedSets = isRunning
-    ? workSteps.filter((_, i) => {
-        const si = sequence.current.indexOf(workSteps[i]);
-        return si < stepIndex;
-      }).length
-    : 0;
+  const completedSets = workSteps.filter((_, i) => {
+    const si = sequence.current.indexOf(workSteps[i]);
+    return si < stepIndex;
+  }).length;
 
   const nextStep = sequence.current[stepIndex + 1];
 
@@ -156,7 +161,6 @@ export default function TimerScreen({ circuit, onComplete, onBack }) {
         )}
       </div>
 
-      {/* Round badges */}
       {isRunning && (
         <div className="round-badges">
           {Array.from({ length: ROUNDS_PER_CIRCUIT }, (_, i) => {
@@ -189,7 +193,7 @@ export default function TimerScreen({ circuit, onComplete, onBack }) {
                 <div className={`timer-phase-label timer-phase-label--${phase}`}>
                   {phase === "work" ? "WORK" : "REST"}
                 </div>
-                <div className="timer-countdown">{timeLeft ?? duration}</div>
+                <div className="timer-countdown">{displayTime ?? duration}</div>
                 <div className="timer-unit">seconds</div>
               </div>
             </div>
@@ -211,32 +215,25 @@ export default function TimerScreen({ circuit, onComplete, onBack }) {
         )}
       </div>
 
-      {/* Exercise progress dots */}
       {isRunning && (
         <div className="exercise-progress">
-          {circuit.exercises.map((ex, i) => {
-            const round1Done = currentStep?.round === 2 || (currentStep?.round === 1 && currentStep?.exerciseIndex > i) || (currentStep?.round === 1 && currentStep?.exerciseIndex === i && phase === "rest");
-            const round2Done = currentStep?.round === 2 && (currentStep?.exerciseIndex > i || (currentStep?.exerciseIndex === i && phase === "rest"));
-            return (
-              <div key={i} className="exercise-dot-group">
-                <div className="exercise-dot-label">{ex.split(" ").slice(-1)[0]}</div>
-                <div className="exercise-dot-row">
-                  {Array.from({ length: ROUNDS_PER_CIRCUIT }, (_, r) => {
-                    const rNum = r + 1;
-                    let dotState = "pending";
-                    if (rNum < (currentStep?.round ?? 1)) dotState = "done";
-                    else if (rNum === (currentStep?.round ?? 1)) {
-                      if (currentStep?.exerciseIndex > i) dotState = "done";
-                      else if (currentStep?.exerciseIndex === i) dotState = phase === "work" ? "active" : "done";
-                    }
-                    return (
-                      <div key={r} className={`exercise-dot exercise-dot--${dotState}`} />
-                    );
-                  })}
-                </div>
+          {circuit.exercises.map((ex, i) => (
+            <div key={i} className="exercise-dot-group">
+              <div className="exercise-dot-label">{ex.split(" ").slice(-1)[0]}</div>
+              <div className="exercise-dot-row">
+                {Array.from({ length: ROUNDS_PER_CIRCUIT }, (_, r) => {
+                  const rNum = r + 1;
+                  let dotState = "pending";
+                  if (rNum < (currentStep?.round ?? 1)) dotState = "done";
+                  else if (rNum === (currentStep?.round ?? 1)) {
+                    if (currentStep?.exerciseIndex > i) dotState = "done";
+                    else if (currentStep?.exerciseIndex === i) dotState = phase === "work" ? "active" : "done";
+                  }
+                  return <div key={r} className={`exercise-dot exercise-dot--${dotState}`} />;
+                })}
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       )}
 
