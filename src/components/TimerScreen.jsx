@@ -249,10 +249,10 @@ export default function TimerScreen({ circuit, onComplete, onBack }) {
           </button>
         ) : (
           <div className="timer-buttons">
-            <button className="btn btn-ghost" onClick={handlePauseResume}>
+            <button className="btn btn-primary" onClick={handlePauseResume}>
               {isPaused ? "Resume" : "Pause"}
             </button>
-            <button className="btn btn-secondary" onClick={handleSkip}>
+            <button className="btn btn-ghost" onClick={handleSkip}>
               Skip
             </button>
           </div>

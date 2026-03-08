@@ -1,8 +1,92 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ROUNDS_PER_CIRCUIT, exerciseDescriptions } from "../workoutData";
 
+// Strip equipment prefixes so the wger search finds a better match
+function toSearchTerm(name) {
+  return name
+    .replace(/^(dumbbell|barbell|kettlebell|alternating\s+dumbbell|bent-over\s+dumbbell|renegade\s+dumbbell)\s+/i, "")
+    .trim();
+}
+
+function ExercisePreviewPlaceholder({ exercise }) {
+  const n = exercise.toLowerCase();
+  const isCardio = /jump|rope|jacks|knees|burpee|crawl|climber/.test(n);
+  const isCore = /plank|twist|crunch|bicycle|v-up|dead bug|raises|bridge/.test(n);
+
+  return (
+    <div className={`exercise-preview-placeholder ${isCardio ? "ep--cardio" : isCore ? "ep--core" : "ep--strength"}`}>
+      {isCardio ? (
+        /* Running figure */
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="24" cy="9" r="4" />
+          <line x1="24" y1="13" x2="24" y2="27" />
+          <line x1="14" y1="19" x2="34" y2="19" />
+          <line x1="24" y1="27" x2="16" y2="40" />
+          <line x1="24" y1="27" x2="32" y2="40" />
+        </svg>
+      ) : isCore ? (
+        /* Plank figure */
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="10" cy="26" r="4" />
+          <line x1="14" y1="28" x2="40" y2="28" />
+          <line x1="40" y1="28" x2="40" y2="20" />
+          <circle cx="40" cy="16" r="4" />
+          <line x1="10" y1="32" x2="10" y2="40" />
+          <line x1="40" y1="32" x2="40" y2="40" />
+        </svg>
+      ) : (
+        /* Dumbbell */
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="20" width="8" height="8" rx="2" />
+          <rect x="38" y="20" width="8" height="8" rx="2" />
+          <rect x="8" y="16" width="7" height="16" rx="2" />
+          <rect x="33" y="16" width="7" height="16" rx="2" />
+          <line x1="15" y1="24" x2="33" y2="24" />
+        </svg>
+      )}
+    </div>
+  );
+}
+
 function ExerciseModal({ exercise, onClose }) {
-  const description = exerciseDescriptions[exercise] ?? "A great exercise to include in your full-body workout.";
+  const [imageUrl, setImageUrl] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const description = exerciseDescriptions[exercise] ?? "A great exercise for your full-body workout.";
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchImage() {
+      try {
+        const term = toSearchTerm(exercise);
+        const res = await fetch(
+          `https://wger.de/api/v2/exercise/?format=json&language=2&status=2&limit=5&name=${encodeURIComponent(term)}`
+        );
+        if (cancelled || !res.ok) return;
+        const data = await res.json();
+        if (!data.results?.length) return;
+
+        const baseId = data.results[0].exercise_base;
+        const imgRes = await fetch(
+          `https://wger.de/api/v2/exerciseimage/?format=json&exercise_base=${baseId}&is_main=true`
+        );
+        if (cancelled || !imgRes.ok) return;
+        const imgData = await imgRes.json();
+        if (imgData.results?.length) {
+          setImageUrl(imgData.results[0].image);
+        }
+      } catch {
+        // Network unavailable — placeholder will show
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    fetchImage();
+    return () => { cancelled = true; };
+  }, [exercise]);
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
@@ -15,6 +99,19 @@ function ExerciseModal({ exercise, onClose }) {
             </svg>
           </button>
         </div>
+
+        <div className="exercise-preview">
+          {loading ? (
+            <div className="exercise-preview-loading">
+              <div className="exercise-preview-spinner" />
+            </div>
+          ) : imageUrl ? (
+            <img src={imageUrl} alt={exercise} className="exercise-preview-img" />
+          ) : (
+            <ExercisePreviewPlaceholder exercise={exercise} />
+          )}
+        </div>
+
         <p className="modal-body">{description}</p>
       </div>
     </div>
@@ -34,7 +131,7 @@ export default function Dashboard({ circuits, completedCircuits, activeCircuit, 
       </div>
 
       <div className="circuit-list">
-        {circuits.map((circuit, index) => {
+        {circuits.map((circuit) => {
           const isCompleted = completedCircuits.includes(circuit.id);
           const isCurrent = activeCircuit === circuit.id;
 
@@ -69,8 +166,8 @@ export default function Dashboard({ circuits, completedCircuits, activeCircuit, 
                       {ex}
                       <svg className="exercise-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="12" cy="12" r="10" />
-                        <line x1="12" y1="8" x2="12" y2="12" />
-                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                        <line x1="12" y1="16" x2="12" y2="12" />
+                        <line x1="12" y1="8" x2="12.01" y2="8" />
                       </svg>
                     </button>
                   </li>
