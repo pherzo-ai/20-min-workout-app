@@ -60,24 +60,28 @@ function ExerciseModal({ exercise, onClose }) {
     async function fetchImage() {
       try {
         const term = toSearchTerm(exercise);
+        // wger's text-search endpoint — does icontains matching and returns
+        // image URLs directly in a single call, avoiding the exact-match
+        // problem of the REST filter endpoint.
         const res = await fetch(
-          `https://wger.de/api/v2/exercise/?format=json&language=2&status=2&limit=5&name=${encodeURIComponent(term)}`
+          `https://wger.de/en/exercise/search/?term=${encodeURIComponent(term)}&format=json&language=english`
         );
         if (cancelled || !res.ok) return;
         const data = await res.json();
-        if (!data.results?.length) return;
+        if (!data.suggestions?.length) return;
 
-        const baseId = data.results[0].exercise_base;
-        const imgRes = await fetch(
-          `https://wger.de/api/v2/exerciseimage/?format=json&exercise_base=${baseId}&is_main=true`
-        );
-        if (cancelled || !imgRes.ok) return;
-        const imgData = await imgRes.json();
-        if (imgData.results?.length) {
-          setImageUrl(imgData.results[0].image);
+        // Prefer a suggestion whose name contains the first word of the term
+        const firstWord = term.split(" ")[0].toLowerCase();
+        const best =
+          data.suggestions.find(s =>
+            s.value.toLowerCase().includes(firstWord)
+          ) ?? data.suggestions[0];
+
+        if (best?.data?.image) {
+          setImageUrl(best.data.image);
         }
       } catch {
-        // Network unavailable — placeholder will show
+        // Network unavailable or CORS blocked — placeholder will show
       } finally {
         if (!cancelled) setLoading(false);
       }

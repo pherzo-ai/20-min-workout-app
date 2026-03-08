@@ -870,11 +870,11 @@
   gap: 12px;
 }
 
-.timer-buttons .btn-ghost {
-  flex: 1;
+.timer-buttons .btn-primary {
+  flex: 2;
 }
 
-.timer-buttons .btn-secondary {
+.timer-buttons .btn-ghost {
   flex: 1;
 }
 
