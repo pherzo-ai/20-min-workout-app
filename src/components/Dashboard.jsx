@@ -1,11 +1,52 @@
 import { useState, useEffect } from "react";
 import { ROUNDS_PER_CIRCUIT, exerciseDescriptions } from "../workoutData";
 
-// Strip equipment prefixes so the wger search finds a better match
+// Maps our exercise names to wger's naming convention for reliable search
+const WGER_SEARCH_TERMS = {
+  "Dumbbell Goblet Squat":              "Goblet squat",
+  "Push Ups":                           "Push-up",
+  "Wide Push Ups":                      "Push-up",
+  "Push Up Shoulder Tap":               "Push-up",
+  "Jump Rope":                          "Jump rope",
+  "Dumbbell Bench Press":               "Bench Press",
+  "Dumbbell Romanian Deadlift":         "Romanian deadlift",
+  "Alternating Dumbbell Shoulder Press":"Shoulder Press",
+  "Dumbbell Shoulder Press":            "Shoulder Press",
+  "Bent-Over Dumbbell Rows":            "Bent-over row",
+  "Renegade Dumbbell Rows":             "Bent-over row",
+  "Renegade Rows":                      "Bent-over row",
+  "Bulgarian Split Squats":             "Bulgarian split squat",
+  "Air Squats":                         "Squat",
+  "Jumping Jacks":                      "Jumping Jacks",
+  "Glute Bridges":                      "Glute bridge",
+  "Burpees":                            "Burpee",
+  "Mountain Climbers":                  "Mountain Climber",
+  "High Knees":                         "High Knees",
+  "Plank Hold":                         "Plank",
+  "Jump Squats":                        "Jump squat",
+  "Reverse Lunges":                     "Lunge",
+  "Walking Lunges":                     "Lunge",
+  "Bear Crawl":                         "Bear crawl",
+  "Dumbbell Bicep Curls":               "Bicep curl",
+  "Dumbbell Thrusters":                 "Thruster",
+  "Russian Twists":                     "Russian Twist",
+  "Leg Raises":                         "Leg Raise",
+  "Bicycle Crunches":                   "Bicycle crunch",
+  "Dumbbell Deadlift":                  "Deadlift",
+  "Dumbbell Swing":                     "Kettlebell swing",
+  "V-Ups":                              "V-Up",
+  "Plank to Downward Dog":              "Plank",
+  "Side Plank Hip Dips":                "Side plank",
+  "Dead Bug":                           "Dead bug",
+};
+
 function toSearchTerm(name) {
-  return name
-    .replace(/^(dumbbell|barbell|kettlebell|alternating\s+dumbbell|bent-over\s+dumbbell|renegade\s+dumbbell)\s+/i, "")
-    .trim();
+  return (
+    WGER_SEARCH_TERMS[name] ??
+    name
+      .replace(/^(dumbbell|barbell|kettlebell|alternating\s+dumbbell\s+|bent-over\s+dumbbell\s+|renegade\s+dumbbell\s+)\s*/i, "")
+      .trim()
+  );
 }
 
 function ExercisePreviewPlaceholder({ exercise }) {
@@ -60,28 +101,47 @@ function ExerciseModal({ exercise, onClose }) {
     async function fetchImage() {
       try {
         const term = toSearchTerm(exercise);
-        // wger's text-search endpoint — does icontains matching and returns
-        // image URLs directly in a single call, avoiding the exact-match
-        // problem of the REST filter endpoint.
+
+        // Step 1: find exercise translation using the CORS-safe REST API.
+        // The name filter can silently return all exercises when it doesn't
+        // match, so we validate the result ourselves before trusting it.
         const res = await fetch(
-          `https://wger.de/en/exercise/search/?term=${encodeURIComponent(term)}&format=json&language=english`
+          `https://wger.de/api/v2/exercise/?format=json&language=2&status=2&limit=10&name=${encodeURIComponent(term)}`
         );
         if (cancelled || !res.ok) return;
         const data = await res.json();
-        if (!data.suggestions?.length) return;
+        if (!data.results?.length) return;
 
-        // Prefer a suggestion whose name contains the first word of the term
-        const firstWord = term.split(" ")[0].toLowerCase();
-        const best =
-          data.suggestions.find(s =>
-            s.value.toLowerCase().includes(firstWord)
-          ) ?? data.suggestions[0];
+        // Only accept a result whose name actually contains a keyword from
+        // our search term.  This prevents the case where the name filter is
+        // ignored and we accidentally display the first exercise in the DB
+        // for every modal.
+        const keywords = term
+          .toLowerCase()
+          .replace(/[-/]/g, " ")
+          .split(/\s+/)
+          .filter(w => w.length > 2);
 
-        if (best?.data?.image) {
-          setImageUrl(best.data.image);
+        const match = data.results.find(r => {
+          const rName = (r.name ?? "").toLowerCase().replace(/[-/]/g, " ");
+          return keywords.some(kw => rName.includes(kw));
+        });
+        if (!match) return;
+
+        // Step 2: fetch the main image for the matched exercise base.
+        const baseId = match.exercise_base;
+        if (!baseId) return;
+
+        const imgRes = await fetch(
+          `https://wger.de/api/v2/exerciseimage/?format=json&exercise_base=${baseId}&is_main=true`
+        );
+        if (cancelled || !imgRes.ok) return;
+        const imgData = await imgRes.json();
+        if (imgData.results?.length) {
+          setImageUrl(imgData.results[0].image);
         }
       } catch {
-        // Network unavailable or CORS blocked — placeholder will show
+        // Network error — placeholder will show
       } finally {
         if (!cancelled) setLoading(false);
       }
