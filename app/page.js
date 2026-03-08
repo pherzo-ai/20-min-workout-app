@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from "react";
 import Landing from "./components/Landing";
 import Dashboard from "./components/Dashboard";
@@ -7,19 +9,20 @@ import WorkoutComplete from "./components/WorkoutComplete";
 import BottomNav from "./components/BottomNav";
 import CalendarScreen from "./components/CalendarScreen";
 import SettingsScreen from "./components/SettingsScreen";
-import { workoutPlans } from "./workoutData";
-import "./App.css";
+import { workoutPlans } from "./lib/workoutData";
 
 function loadStorage(key, fallback) {
+  if (typeof window === 'undefined') return fallback;
   try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
   catch { return fallback; }
 }
 
-export default function App() {
+export default function Home() {
   const [view, setView] = useState("landing");
   const [activePlanId, setActivePlanId] = useState(() => loadStorage("activePlanId", workoutPlans[0].id));
   const [completedCircuits, setCompletedCircuits] = useState([]);
   const [workoutHistory, setWorkoutHistory] = useState(() => loadStorage("workoutHistory", []));
+  const [mounted, setMounted] = useState(false);
 
   const activePlan = workoutPlans.find(p => p.id === activePlanId) ?? workoutPlans[0];
   const circuits = activePlan.circuits;
@@ -27,12 +30,24 @@ export default function App() {
   const activeCircuit = circuits.find(c => c.id === activeCircuitId) ?? circuits[0];
 
   useEffect(() => {
-    localStorage.setItem("activePlanId", JSON.stringify(activePlanId));
-  }, [activePlanId]);
+    setMounted(true);
+    const storedPlanId = loadStorage("activePlanId", workoutPlans[0].id);
+    const storedHistory = loadStorage("workoutHistory", []);
+    setActivePlanId(storedPlanId);
+    setWorkoutHistory(storedHistory);
+  }, []);
 
   useEffect(() => {
-    localStorage.setItem("workoutHistory", JSON.stringify(workoutHistory));
-  }, [workoutHistory]);
+    if (mounted) {
+      localStorage.setItem("activePlanId", JSON.stringify(activePlanId));
+    }
+  }, [activePlanId, mounted]);
+
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem("workoutHistory", JSON.stringify(workoutHistory));
+    }
+  }, [workoutHistory, mounted]);
 
   const handleStartWorkout = () => setView("dashboard");
 
@@ -72,7 +87,6 @@ export default function App() {
 
   const handleNavTab = (tab) => {
     if (tab === "workout") {
-      // If the previous workout is fully done, start fresh
       if (completedCircuits.length === circuits.length) {
         setCompletedCircuits([]);
         setActiveCircuitId(circuits[0].id);

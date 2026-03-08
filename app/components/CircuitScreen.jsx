@@ -1,4 +1,6 @@
-import { ROUNDS_PER_CIRCUIT, WORK_DURATION, REST_DURATION } from "../workoutData";
+'use client';
+
+import { ROUNDS_PER_CIRCUIT, WORK_DURATION, REST_DURATION } from "../lib/workoutData";
 
 export default function CircuitScreen({ circuit, onStart, onBack }) {
   const totalSets = circuit.exercises.length * ROUNDS_PER_CIRCUIT;

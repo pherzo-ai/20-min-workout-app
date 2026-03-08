@@ -1,5 +1,5 @@
-export const WORK_DURATION = 45; // seconds
-export const REST_DURATION = 15; // seconds
+export const WORK_DURATION = 45;
+export const REST_DURATION = 15;
 export const ROUNDS_PER_CIRCUIT = 2;
 
 export const workoutPlans = [
@@ -109,11 +109,9 @@ export const workoutPlans = [
   },
 ];
 
-// Keep export for any component that still needs backward compat
 export const circuits = workoutPlans[0].circuits;
 
 export const exerciseDescriptions = {
-  // Dumbbell Full Body
   "Dumbbell Goblet Squat": "Hold a dumbbell vertically at your chest, feet shoulder-width apart. Sit back and down into a squat, keeping your chest tall and knees tracking over your toes. Drive through your heels to stand.",
   "Push Ups": "Start in a high plank with hands just outside shoulder-width. Lower your chest to the floor keeping elbows at roughly 45°, then press back up. Keep your core braced and body in a straight line throughout.",
   "Jump Rope": "Jump with both feet together (or alternate) while swinging the rope. Stay on the balls of your feet, keep jumps small, and maintain a consistent rhythm.",
@@ -124,8 +122,6 @@ export const exerciseDescriptions = {
   "Renegade Dumbbell Rows": "Start in a high plank holding dumbbells on the floor. Row one dumbbell up to your hip while balancing on the other. Keep your hips level and avoid rotating. Alternate sides each rep.",
   "Bulgarian Split Squats": "Place your rear foot on an elevated surface behind you. Lower your back knee toward the floor, keeping your front shin vertical and chest upright. Drive through your front heel to stand.",
   "Push Up Shoulder Tap": "Perform a push-up. At the top of each rep, lift one hand and tap the opposite shoulder, then alternate. Brace your core and keep your hips from rocking side to side.",
-
-  // Bodyweight Only
   "Air Squats": "Stand with feet shoulder-width apart. Sit back and down until your thighs reach parallel (or below), keeping your chest up. Drive through your heels to stand, squeezing your glutes at the top.",
   "Jumping Jacks": "Start with feet together and arms at your sides. Jump your feet out wide while raising both arms overhead, then jump back to start. Keep a steady, controlled rhythm.",
   "Glute Bridges": "Lie on your back with knees bent and feet flat. Drive your hips toward the ceiling, squeezing your glutes hard at the top. Hold briefly, then lower with control.",
@@ -137,15 +133,11 @@ export const exerciseDescriptions = {
   "Wide Push Ups": "Perform a push-up with hands placed wider than shoulder-width. The wider grip shifts more emphasis to your chest. Keep elbows at about 45° and body straight.",
   "Reverse Lunges": "Stand tall. Step one foot directly backward and lower your back knee toward the floor without touching it. Push off your front foot to return. Alternate legs each rep.",
   "Bear Crawl": "Start on all fours with knees hovering just off the ground. Move forward by stepping your right hand and left foot simultaneously, then left hand and right foot. Keep your back flat and hips low.",
-
-  // Upper/Lower Split
   "Walking Lunges": "Step forward and lower your back knee toward the floor, then bring your rear foot forward to step into the next lunge. Continue alternating legs and keep your torso upright throughout.",
   "Dumbbell Shoulder Press": "Stand or sit with dumbbells at shoulder height, palms facing forward. Press both dumbbells overhead until arms are fully extended. Lower with control. Keep your core tight.",
   "Dumbbell Bicep Curls": "Stand with dumbbells at your sides, palms facing forward. Curl both up to your shoulders, keeping elbows pinned to your sides. Lower slowly with control.",
   "Dumbbell Thrusters": "Hold dumbbells at shoulder height. Squat down, then as you drive up through your legs, press the dumbbells overhead in one explosive motion. Return dumbbells to shoulders as you descend.",
   "Renegade Rows": "Same as Renegade Dumbbell Rows — high plank on dumbbells, row one side at a time while keeping hips level and braced.",
-
-  // Core & Cardio
   "Russian Twists": "Sit with knees bent, feet off the floor, and torso leaned back slightly. Rotate your torso and touch the floor on each side. Optionally hold a weight. Keep your lower back from rounding.",
   "Leg Raises": "Lie flat on your back, legs straight. Raise your legs to 90°, then lower them slowly toward the floor without letting them touch. Keep your lower back pressed into the ground throughout.",
   "Bicycle Crunches": "Lie on your back with hands behind your head. Bring your elbow toward the opposite knee as you extend the other leg, then switch in a cycling motion. Focus on rotation, not pulling your neck.",

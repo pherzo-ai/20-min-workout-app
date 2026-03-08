@@ -1,25 +1,20 @@
-import { useState, useEffect } from "react";
-import { ROUNDS_PER_CIRCUIT, exerciseDescriptions } from "../workoutData";
+'use client';
 
-// Static map of exercise name → free-exercise-db image ID.
-// Images are served from GitHub's raw CDN which allows cross-origin requests.
-// Source: https://github.com/yuhonas/free-exercise-db
+import { useState } from "react";
+import { ROUNDS_PER_CIRCUIT, exerciseDescriptions } from "../lib/workoutData";
+
 const DB_BASE = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/";
 const EXERCISE_IMAGES = {
-  // Dumbbell Full Body
   "Dumbbell Goblet Squat":              "Goblet_Squat",
   "Push Ups":                           "Pushups",
   "Dumbbell Bench Press":               "Dumbbell_Bench_Press",
   "Dumbbell Romanian Deadlift":         "Romanian_Deadlift",
-  // Circuit 2
   "Alternating Dumbbell Shoulder Press":"Dumbbell_Shoulder_Press",
   "Bent-Over Dumbbell Rows":            "Bent_Over_Two-Dumbbell_Row",
-  // Circuit 3
   "Renegade Dumbbell Rows":             "Alternating_Renegade_Row",
   "Bulgarian Split Squats":             "Split_Squats",
   "Wide Push Ups":                      "Pushups_Close_and_Wide_Hand_Positions",
   "Push Up Shoulder Tap":               "Pushups",
-  // Bodyweight Only
   "Air Squats":                         "Bodyweight_Squat",
   "Glute Bridges":                      "Single_Leg_Glute_Bridge",
   "Mountain Climbers":                  "Mountain_Climbers",
@@ -28,12 +23,10 @@ const EXERCISE_IMAGES = {
   "Reverse Lunges":                     "Crossover_Reverse_Lunge",
   "Walking Lunges":                     "Bodyweight_Walking_Lunge",
   "Bear Crawl":                         "Bear_Crawl_Sled_Drags",
-  // Upper / Lower Split
   "Dumbbell Shoulder Press":            "Dumbbell_Shoulder_Press",
   "Dumbbell Bicep Curls":               "Dumbbell_Bicep_Curl",
   "Dumbbell Thrusters":                 "Kettlebell_Thruster",
   "Renegade Rows":                      "Alternating_Renegade_Row",
-  // Core & Cardio
   "Russian Twists":                     "Russian_Twist",
   "Leg Raises":                         "Front_Leg_Raises",
   "Dumbbell Deadlift":                  "Romanian_Deadlift",
@@ -51,7 +44,6 @@ function ExercisePreviewPlaceholder({ exercise }) {
   return (
     <div className={`exercise-preview-placeholder ${isCardio ? "ep--cardio" : isCore ? "ep--core" : "ep--strength"}`}>
       {isCardio ? (
-        /* Running figure */
         <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="24" cy="9" r="4" />
           <line x1="24" y1="13" x2="24" y2="27" />
@@ -60,7 +52,6 @@ function ExercisePreviewPlaceholder({ exercise }) {
           <line x1="24" y1="27" x2="32" y2="40" />
         </svg>
       ) : isCore ? (
-        /* Plank figure */
         <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="10" cy="26" r="4" />
           <line x1="14" y1="28" x2="40" y2="28" />
@@ -70,7 +61,6 @@ function ExercisePreviewPlaceholder({ exercise }) {
           <line x1="40" y1="32" x2="40" y2="40" />
         </svg>
       ) : (
-        /* Dumbbell */
         <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <rect x="2" y="20" width="8" height="8" rx="2" />
           <rect x="38" y="20" width="8" height="8" rx="2" />
@@ -86,7 +76,6 @@ function ExercisePreviewPlaceholder({ exercise }) {
 function ExerciseModal({ exercise, onClose }) {
   const imageId = EXERCISE_IMAGES[exercise];
   const imageUrl = imageId ? `${DB_BASE}${imageId}/0.jpg` : null;
-
   const description = exerciseDescriptions[exercise] ?? "A great exercise for your full-body workout.";
 
   return (

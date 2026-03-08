@@ -1,3 +1,5 @@
+'use client';
+
 export default function BottomNav({ activeTab, onTabChange }) {
   return (
     <nav className="bottom-nav">

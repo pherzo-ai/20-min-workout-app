@@ -1,4 +1,6 @@
-import { workoutPlans } from "../workoutData";
+'use client';
+
+import { workoutPlans } from "../lib/workoutData";
 
 export default function SettingsScreen({ activePlanId, onSelectPlan }) {
   return (

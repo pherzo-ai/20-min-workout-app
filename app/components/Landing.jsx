@@ -1,3 +1,5 @@
+'use client';
+
 export default function Landing({ onStart }) {
   return (
     <div className="screen landing-screen">

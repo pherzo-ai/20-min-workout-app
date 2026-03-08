@@ -1,9 +1,8 @@
-import { useState, useRef, useEffect } from "react";
-import { WORK_DURATION, REST_DURATION, ROUNDS_PER_CIRCUIT } from "../workoutData";
+'use client';
 
-// ---------------------------------------------------------------------------
-// Audio cues — synthesised via Web Audio API, no external files needed
-// ---------------------------------------------------------------------------
+import { useState, useRef, useEffect } from "react";
+import { WORK_DURATION, REST_DURATION, ROUNDS_PER_CIRCUIT } from "../lib/workoutData";
+
 function tone(ctx, freq, startTime, durationSec, gainValue = 0.28) {
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
@@ -21,15 +20,15 @@ function tone(ctx, freq, startTime, durationSec, gainValue = 0.28) {
 
 function playWorkStart(ctx) {
   const t = ctx.currentTime;
-  tone(ctx, 440, t,        0.08);   // low
-  tone(ctx, 554, t + 0.10, 0.08);   // mid
-  tone(ctx, 660, t + 0.20, 0.14);   // high — GO
+  tone(ctx, 440, t,        0.08);
+  tone(ctx, 554, t + 0.10, 0.08);
+  tone(ctx, 660, t + 0.20, 0.14);
 }
 
 function playRestStart(ctx) {
   const t = ctx.currentTime;
-  tone(ctx, 660, t,        0.10);   // high
-  tone(ctx, 440, t + 0.13, 0.22);   // low — STOP
+  tone(ctx, 660, t,        0.10);
+  tone(ctx, 440, t + 0.13, 0.22);
 }
 
 function playCountdownBeep(ctx) {
@@ -80,7 +79,6 @@ export default function TimerScreen({ circuit, onComplete, onBack }) {
   const [displayTime, setDisplayTime] = useState(null);
   const [progress, setProgress] = useState(1);
 
-  // All mutable timing state lives in refs so the RAF loop always sees current values
   const rafRef = useRef(null);
   const stepIndexRef = useRef(0);
   const stepStartRef = useRef(null);
@@ -90,12 +88,9 @@ export default function TimerScreen({ circuit, onComplete, onBack }) {
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
 
-  // Audio — AudioContext created lazily on first user interaction
   const audioCtxRef = useRef(null);
-  // Track which countdown second has already beeped so we fire each only once
   const lastCountdownSecRef = useRef(null);
 
-  // tickRef holds the RAF callback — defined as a ref so it always reads latest values
   const tickRef = useRef(null);
   tickRef.current = () => {
     if (isPausedRef.current) return;
@@ -105,7 +100,6 @@ export default function TimerScreen({ circuit, onComplete, onBack }) {
     setDisplayTime(secsLeft);
     setProgress(remaining / stepDurationRef.current);
 
-    // Countdown beeps at 3, 2, 1 seconds remaining (once per second)
     if (secsLeft <= 3 && secsLeft > 0 && secsLeft !== lastCountdownSecRef.current) {
       lastCountdownSecRef.current = secsLeft;
       const ctx = audioCtxRef.current;
@@ -118,7 +112,6 @@ export default function TimerScreen({ circuit, onComplete, onBack }) {
         onCompleteRef.current();
         return;
       }
-      // Brief pause between steps for visual clarity, then auto-start next
       setTimeout(() => startStep(nextIndex), 300);
       return;
     }
@@ -144,7 +137,6 @@ export default function TimerScreen({ circuit, onComplete, onBack }) {
     setDisplayTime(step.type === "work" ? WORK_DURATION : REST_DURATION);
     cancelRaf();
 
-    // Play phase-transition sound
     const ctx = audioCtxRef.current;
     if (ctx) {
       ctx.resume().then(() => {
@@ -157,7 +149,6 @@ export default function TimerScreen({ circuit, onComplete, onBack }) {
   };
 
   const handleStart = () => {
-    // AudioContext must be created inside a user-gesture handler
     if (!audioCtxRef.current) {
       audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
     }
@@ -293,7 +284,6 @@ export default function TimerScreen({ circuit, onComplete, onBack }) {
                       if (currentStep.exerciseIndex > i) dotState = "done";
                       else if (currentStep.exerciseIndex === i) dotState = "active";
                     } else {
-                      // during rest: the exercise at exerciseIndex just finished
                       if (currentStep.exerciseIndex >= i) dotState = "done";
                     }
                   }

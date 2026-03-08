@@ -1,3 +1,5 @@
+'use client';
+
 export default function WorkoutComplete({ onRestart }) {
   return (
     <div className="screen complete-screen">
