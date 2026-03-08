@@ -1,6 +1,41 @@
 import { useState, useRef, useEffect } from "react";
 import { WORK_DURATION, REST_DURATION, ROUNDS_PER_CIRCUIT } from "../workoutData";
 
+// ---------------------------------------------------------------------------
+// Audio cues — synthesised via Web Audio API, no external files needed
+// ---------------------------------------------------------------------------
+function tone(ctx, freq, startTime, durationSec, gainValue = 0.28) {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = "sine";
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0, startTime);
+  gain.gain.linearRampToValueAtTime(gainValue, startTime + 0.01);
+  gain.gain.setValueAtTime(gainValue, startTime + durationSec - 0.015);
+  gain.gain.linearRampToValueAtTime(0, startTime + durationSec);
+  osc.start(startTime);
+  osc.stop(startTime + durationSec);
+}
+
+function playWorkStart(ctx) {
+  const t = ctx.currentTime;
+  tone(ctx, 440, t,        0.08);   // low
+  tone(ctx, 554, t + 0.10, 0.08);   // mid
+  tone(ctx, 660, t + 0.20, 0.14);   // high — GO
+}
+
+function playRestStart(ctx) {
+  const t = ctx.currentTime;
+  tone(ctx, 660, t,        0.10);   // high
+  tone(ctx, 440, t + 0.13, 0.22);   // low — STOP
+}
+
+function playCountdownBeep(ctx) {
+  tone(ctx, 880, ctx.currentTime, 0.07, 0.18);
+}
+
 function buildSequence(exercises) {
   const sequence = [];
   for (let round = 1; round <= ROUNDS_PER_CIRCUIT; round++) {
@@ -55,14 +90,27 @@ export default function TimerScreen({ circuit, onComplete, onBack }) {
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
 
+  // Audio — AudioContext created lazily on first user interaction
+  const audioCtxRef = useRef(null);
+  // Track which countdown second has already beeped so we fire each only once
+  const lastCountdownSecRef = useRef(null);
+
   // tickRef holds the RAF callback — defined as a ref so it always reads latest values
   const tickRef = useRef(null);
   tickRef.current = () => {
     if (isPausedRef.current) return;
     const elapsed = performance.now() - stepStartRef.current;
     const remaining = Math.max(0, stepDurationRef.current - elapsed);
-    setDisplayTime(Math.ceil(remaining / 1000));
+    const secsLeft = Math.ceil(remaining / 1000);
+    setDisplayTime(secsLeft);
     setProgress(remaining / stepDurationRef.current);
+
+    // Countdown beeps at 3, 2, 1 seconds remaining (once per second)
+    if (secsLeft <= 3 && secsLeft > 0 && secsLeft !== lastCountdownSecRef.current) {
+      lastCountdownSecRef.current = secsLeft;
+      const ctx = audioCtxRef.current;
+      if (ctx) playCountdownBeep(ctx);
+    }
     if (remaining <= 0) {
       const nextIndex = stepIndexRef.current + 1;
       if (nextIndex >= sequence.current.length) {
@@ -90,14 +138,29 @@ export default function TimerScreen({ circuit, onComplete, onBack }) {
     stepStartRef.current = performance.now();
     pausedElapsedRef.current = 0;
     isPausedRef.current = false;
+    lastCountdownSecRef.current = null;
     setStepIndex(index);
     setProgress(1);
     setDisplayTime(step.type === "work" ? WORK_DURATION : REST_DURATION);
     cancelRaf();
+
+    // Play phase-transition sound
+    const ctx = audioCtxRef.current;
+    if (ctx) {
+      ctx.resume().then(() => {
+        if (step.type === "work") playWorkStart(ctx);
+        else playRestStart(ctx);
+      });
+    }
+
     rafRef.current = requestAnimationFrame(() => tickRef.current());
   };
 
   const handleStart = () => {
+    // AudioContext must be created inside a user-gesture handler
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    }
     setIsRunning(true);
     startStep(0);
   };
