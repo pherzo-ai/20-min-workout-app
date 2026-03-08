@@ -1,53 +1,47 @@
 import { useState, useEffect } from "react";
 import { ROUNDS_PER_CIRCUIT, exerciseDescriptions } from "../workoutData";
 
-// Maps our exercise names to wger's naming convention for reliable search
-const WGER_SEARCH_TERMS = {
-  "Dumbbell Goblet Squat":              "Goblet squat",
-  "Push Ups":                           "Push-up",
-  "Wide Push Ups":                      "Push-up",
-  "Push Up Shoulder Tap":               "Push-up",
-  "Jump Rope":                          "Jump rope",
-  "Dumbbell Bench Press":               "Bench Press",
-  "Dumbbell Romanian Deadlift":         "Romanian deadlift",
-  "Alternating Dumbbell Shoulder Press":"Shoulder Press",
-  "Dumbbell Shoulder Press":            "Shoulder Press",
-  "Bent-Over Dumbbell Rows":            "Bent-over row",
-  "Renegade Dumbbell Rows":             "Bent-over row",
-  "Renegade Rows":                      "Bent-over row",
-  "Bulgarian Split Squats":             "Bulgarian split squat",
-  "Air Squats":                         "Squat",
-  "Jumping Jacks":                      "Jumping Jacks",
-  "Glute Bridges":                      "Glute bridge",
-  "Burpees":                            "Burpee",
-  "Mountain Climbers":                  "Mountain Climber",
-  "High Knees":                         "High Knees",
+// Static map of exercise name → free-exercise-db image ID.
+// Images are served from GitHub's raw CDN which allows cross-origin requests.
+// Source: https://github.com/yuhonas/free-exercise-db
+const DB_BASE = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/";
+const EXERCISE_IMAGES = {
+  // Dumbbell Full Body
+  "Dumbbell Goblet Squat":              "Goblet_Squat",
+  "Push Ups":                           "Pushups",
+  "Dumbbell Bench Press":               "Dumbbell_Bench_Press",
+  "Dumbbell Romanian Deadlift":         "Romanian_Deadlift",
+  // Circuit 2
+  "Alternating Dumbbell Shoulder Press":"Dumbbell_Shoulder_Press",
+  "Bent-Over Dumbbell Rows":            "Bent_Over_Two-Dumbbell_Row",
+  // Circuit 3
+  "Renegade Dumbbell Rows":             "Alternating_Renegade_Row",
+  "Bulgarian Split Squats":             "Split_Squats",
+  "Wide Push Ups":                      "Pushups_Close_and_Wide_Hand_Positions",
+  "Push Up Shoulder Tap":               "Pushups",
+  // Bodyweight Only
+  "Air Squats":                         "Bodyweight_Squat",
+  "Glute Bridges":                      "Single_Leg_Glute_Bridge",
+  "Mountain Climbers":                  "Mountain_Climbers",
   "Plank Hold":                         "Plank",
-  "Jump Squats":                        "Jump squat",
-  "Reverse Lunges":                     "Lunge",
-  "Walking Lunges":                     "Lunge",
-  "Bear Crawl":                         "Bear crawl",
-  "Dumbbell Bicep Curls":               "Bicep curl",
-  "Dumbbell Thrusters":                 "Thruster",
-  "Russian Twists":                     "Russian Twist",
-  "Leg Raises":                         "Leg Raise",
-  "Bicycle Crunches":                   "Bicycle crunch",
-  "Dumbbell Deadlift":                  "Deadlift",
-  "Dumbbell Swing":                     "Kettlebell swing",
-  "V-Ups":                              "V-Up",
+  "Jump Squats":                        "Freehand_Jump_Squat",
+  "Reverse Lunges":                     "Crossover_Reverse_Lunge",
+  "Walking Lunges":                     "Bodyweight_Walking_Lunge",
+  "Bear Crawl":                         "Bear_Crawl_Sled_Drags",
+  // Upper / Lower Split
+  "Dumbbell Shoulder Press":            "Dumbbell_Shoulder_Press",
+  "Dumbbell Bicep Curls":               "Dumbbell_Bicep_Curl",
+  "Dumbbell Thrusters":                 "Kettlebell_Thruster",
+  "Renegade Rows":                      "Alternating_Renegade_Row",
+  // Core & Cardio
+  "Russian Twists":                     "Russian_Twist",
+  "Leg Raises":                         "Front_Leg_Raises",
+  "Dumbbell Deadlift":                  "Romanian_Deadlift",
+  "Dumbbell Swing":                     "One-Arm_Kettlebell_Swings",
   "Plank to Downward Dog":              "Plank",
-  "Side Plank Hip Dips":                "Side plank",
-  "Dead Bug":                           "Dead bug",
+  "Side Plank Hip Dips":                "Push_Up_to_Side_Plank",
+  "Dead Bug":                           "Dead_Bug",
 };
-
-function toSearchTerm(name) {
-  return (
-    WGER_SEARCH_TERMS[name] ??
-    name
-      .replace(/^(dumbbell|barbell|kettlebell|alternating\s+dumbbell\s+|bent-over\s+dumbbell\s+|renegade\s+dumbbell\s+)\s*/i, "")
-      .trim()
-  );
-}
 
 function ExercisePreviewPlaceholder({ exercise }) {
   const n = exercise.toLowerCase();
@@ -90,66 +84,10 @@ function ExercisePreviewPlaceholder({ exercise }) {
 }
 
 function ExerciseModal({ exercise, onClose }) {
-  const [imageUrl, setImageUrl] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const imageId = EXERCISE_IMAGES[exercise];
+  const imageUrl = imageId ? `${DB_BASE}${imageId}/0.jpg` : null;
 
   const description = exerciseDescriptions[exercise] ?? "A great exercise for your full-body workout.";
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function fetchImage() {
-      try {
-        const term = toSearchTerm(exercise);
-
-        // Step 1: find exercise translation using the CORS-safe REST API.
-        // The name filter can silently return all exercises when it doesn't
-        // match, so we validate the result ourselves before trusting it.
-        const res = await fetch(
-          `https://wger.de/api/v2/exercise/?format=json&language=2&status=2&limit=10&name=${encodeURIComponent(term)}`
-        );
-        if (cancelled || !res.ok) return;
-        const data = await res.json();
-        if (!data.results?.length) return;
-
-        // Only accept a result whose name actually contains a keyword from
-        // our search term.  This prevents the case where the name filter is
-        // ignored and we accidentally display the first exercise in the DB
-        // for every modal.
-        const keywords = term
-          .toLowerCase()
-          .replace(/[-/]/g, " ")
-          .split(/\s+/)
-          .filter(w => w.length > 2);
-
-        const match = data.results.find(r => {
-          const rName = (r.name ?? "").toLowerCase().replace(/[-/]/g, " ");
-          return keywords.some(kw => rName.includes(kw));
-        });
-        if (!match) return;
-
-        // Step 2: fetch the main image for the matched exercise base.
-        const baseId = match.exercise_base;
-        if (!baseId) return;
-
-        const imgRes = await fetch(
-          `https://wger.de/api/v2/exerciseimage/?format=json&exercise_base=${baseId}&is_main=true`
-        );
-        if (cancelled || !imgRes.ok) return;
-        const imgData = await imgRes.json();
-        if (imgData.results?.length) {
-          setImageUrl(imgData.results[0].image);
-        }
-      } catch {
-        // Network error — placeholder will show
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    fetchImage();
-    return () => { cancelled = true; };
-  }, [exercise]);
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -165,11 +103,7 @@ function ExerciseModal({ exercise, onClose }) {
         </div>
 
         <div className="exercise-preview">
-          {loading ? (
-            <div className="exercise-preview-loading">
-              <div className="exercise-preview-spinner" />
-            </div>
-          ) : imageUrl ? (
+          {imageUrl ? (
             <img src={imageUrl} alt={exercise} className="exercise-preview-img" />
           ) : (
             <ExercisePreviewPlaceholder exercise={exercise} />
