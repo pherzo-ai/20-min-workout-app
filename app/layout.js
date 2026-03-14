@@ -3,6 +3,15 @@ import './globals.css';
 export const metadata = {
   title: '20-Minute Workout',
   description: 'Circuit training app with customizable workout plans',
+  icons: {
+    icon: '/favicon.png',
+    apple: '/apple-touch-icon.png',
+  },
+  appleWebApp: {
+    capable: true,
+    title: 'Workout',
+    statusBarStyle: 'black-translucent',
+  },
 };
 
 export default function RootLayout({ children }) {
