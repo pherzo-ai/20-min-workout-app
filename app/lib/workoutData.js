@@ -2,6 +2,8 @@ export const WORK_DURATION = 35;
 export const REST_DURATION = 15;
 export const ROUND_REST_DURATION = 25;
 export const ROUNDS_PER_CIRCUIT = 2;
+export const RECOVERY_ROUNDS = 1;
+export const RECOVERY_WORK_DURATION = 35;
 
 export const workoutPlans = [
   {
@@ -112,6 +114,63 @@ export const workoutPlans = [
 
 export const circuits = workoutPlans[0].circuits;
 
+export const recoveryPlans = [
+  {
+    id: "recovery-full-body",
+    name: "Full Body Stretch",
+    description: "A complete stretch covering every major muscle group from head to toe.",
+    equipment: ["Mat"],
+    type: "recovery",
+    circuits: [
+      {
+        id: 1,
+        name: "Upper Body",
+        exercises: ["Chest Opener Stretch", "Overhead Tricep Stretch", "Cross-Body Shoulder Stretch", "Neck Side Stretch"],
+        labels: ["Chest", "Tricep", "Shoulder", "Neck"],
+      },
+      {
+        id: 2,
+        name: "Lower Body",
+        exercises: ["Standing Hip Flexor Stretch", "Standing Hamstring Stretch", "Standing Quad Stretch", "Seated Calf Stretch"],
+        labels: ["Hip Flexor", "Hamstring", "Quad", "Calf"],
+      },
+      {
+        id: 3,
+        name: "Spine & Core",
+        exercises: ["Cat-Cow Stretch", "Child's Pose", "Seated Spinal Twist", "Downward Dog Hold"],
+        labels: ["Cat-Cow", "Child's", "Twist", "Dog"],
+      },
+    ],
+  },
+  {
+    id: "recovery-mobility",
+    name: "Mobility Flow",
+    description: "Dynamic mobility work to open up tight hips, thoracic spine, and shoulders.",
+    equipment: ["Mat"],
+    type: "recovery",
+    circuits: [
+      {
+        id: 1,
+        name: "Hip & Glute",
+        exercises: ["Pigeon Pose", "Figure-Four Stretch", "Deep Squat Hold", "Hip Circle Stretch"],
+        labels: ["Pigeon", "Figure-4", "Deep Sq.", "Hip Circle"],
+      },
+      {
+        id: 2,
+        name: "Thoracic & Lats",
+        exercises: ["Thread the Needle", "Lat Stretch at Wall", "Thoracic Rotation Stretch", "Doorway Chest Stretch"],
+        labels: ["Thread", "Lats", "T-Spine", "Doorway"],
+      },
+      {
+        id: 3,
+        name: "Full Body Wind-Down",
+        exercises: ["Supine Knee-to-Chest", "Supine Spinal Twist", "Happy Baby Pose", "Legs-Up-the-Wall"],
+        labels: ["Knee-Chest", "Spinal Tw.", "Happy Baby", "Legs Up"],
+      },
+    ],
+  },
+];
+
 export const exerciseDescriptions = {
   "Dumbbell Goblet Squat": "Hold a dumbbell vertically at your chest, feet shoulder-width apart. Sit back and down into a squat, keeping your chest tall and knees tracking over your toes. Drive through your heels to stand.",
   "Push Ups": "Start in a high plank with hands just outside shoulder-width. Lower your chest to the floor keeping elbows at roughly 45°, then press back up. Keep your core braced and body in a straight line throughout.",
@@ -148,4 +207,30 @@ export const exerciseDescriptions = {
   "Plank to Downward Dog": "Start in a high plank. Push your hips up and back into a downward dog (inverted V). Return to plank. Each transition counts as one rep. Breathe steadily.",
   "Side Plank Hip Dips": "Hold a side plank on your forearm. Lower your hip toward the floor, then raise it back above the line. This works your obliques and hip abductors. Keep the movement controlled.",
   "Dead Bug": "Lie on your back with arms extended toward the ceiling and knees bent at 90°. Lower your right arm and left leg simultaneously toward the floor, keeping your lower back pressed down. Return and alternate.",
+
+  // Recovery stretches
+  "Chest Opener Stretch": "Interlace your fingers behind your back. Straighten your arms, squeeze your shoulder blades together, and lift your chest upward. Hold and breathe deeply to open your chest and front shoulders.",
+  "Overhead Tricep Stretch": "Raise one arm overhead and bend your elbow, dropping your hand behind your head. Use your other hand to gently press the elbow further back. Hold, then switch sides.",
+  "Cross-Body Shoulder Stretch": "Bring one arm straight across your chest and use your other forearm to press it closer to your body. Keep your shoulder down and hold. Switch sides halfway through.",
+  "Neck Side Stretch": "Gently tilt your head toward one shoulder until you feel a stretch along the opposite side of your neck. Use a light hand pressure for a deeper stretch. Breathe and switch sides.",
+  "Standing Hip Flexor Stretch": "Step one foot forward into a half-lunge, lowering your back knee toward the floor. Shift your weight forward until you feel a stretch at the front of your back hip. Keep your torso upright.",
+  "Standing Hamstring Stretch": "Stand and hinge forward at the hips with a flat back, reaching your hands toward your shins or the floor. Keep a soft bend in your knees and hold the stretch at the bottom.",
+  "Standing Quad Stretch": "Stand on one foot and pull the opposite foot toward your glutes, keeping your knees together. Hold a wall for balance if needed. Squeeze your glute and hold, then switch sides.",
+  "Seated Calf Stretch": "Sit with one leg extended. Loop a towel or strap around the ball of your foot and gently pull your toes toward you. Keep your knee straight and hold the stretch. Switch sides.",
+  "Cat-Cow Stretch": "On all fours, alternate between arching your back toward the ceiling (cat) and letting it sag while lifting your head (cow). Move slowly with your breath, one rep per breath cycle.",
+  "Child's Pose": "From kneeling, sit your hips back toward your heels and extend your arms forward along the floor. Rest your forehead down and breathe into your lower back and hips. Walk arms to one side for a lat stretch.",
+  "Seated Spinal Twist": "Sit with legs extended. Bend one knee and cross that foot over the other leg. Rotate your torso toward the bent knee, placing the opposite elbow outside it for leverage. Hold, then switch.",
+  "Downward Dog Hold": "From a high plank, push your hips up and back into an inverted V shape. Press your heels toward the floor, straighten your legs, and hold. Pedal your heels alternately to deepen the calf and hamstring stretch.",
+  "Pigeon Pose": "From a plank, bring one knee forward toward the same-side wrist and let your shin rest on the floor at an angle. Extend the back leg straight. Lower your torso over the front leg for a deep hip and glute stretch.",
+  "Figure-Four Stretch": "Lie on your back with knees bent. Cross one ankle over the opposite knee. Flex the top foot and gently press the knee away. Pull the bottom leg toward your chest to deepen the glute stretch.",
+  "Deep Squat Hold": "Stand with feet slightly wider than shoulder-width and toes turned out. Lower into a deep squat, keeping your heels on the floor. Place your elbows inside your knees to open your hips. Hold and breathe.",
+  "Hip Circle Stretch": "Stand with feet hip-width apart and hands on your hips. Draw slow, large circles with your hips, making the movement as wide as comfortable. Reverse direction halfway through to mobilize the hip joints.",
+  "Thread the Needle": "On all fours, slide one arm under your body along the floor until your shoulder touches the ground. Let your head rest on the floor. Hold to stretch the thoracic spine and shoulder. Repeat on the other side.",
+  "Lat Stretch at Wall": "Stand an arm's length from a wall, place both hands on it at shoulder height, and walk your feet back while hinging at the hips. Let your chest drop toward the floor to stretch your lats and thoracic spine.",
+  "Thoracic Rotation Stretch": "Sit cross-legged or kneel. Place one hand behind your head and rotate your elbow up toward the ceiling, then down toward the floor. Focus on upper-back rotation rather than moving your lower back.",
+  "Doorway Chest Stretch": "Stand in a doorway with both arms at 90°, forearms resting on the frame. Step one foot forward and gently lean your body through the doorway until you feel a stretch across your chest and front shoulders.",
+  "Supine Knee-to-Chest": "Lie on your back. Hug both knees into your chest and gently rock side to side. This releases tension in the lower back and glutes. For a single-leg version, extend one leg flat while hugging the other.",
+  "Supine Spinal Twist": "Lie on your back, draw one knee to your chest, then guide it across your body toward the opposite side while extending your same-side arm out. Keep both shoulders on the floor and hold. Switch sides.",
+  "Happy Baby Pose": "Lie on your back and draw both knees toward your chest. Grab the outer edges of your feet (or your ankles) and gently pull your knees down toward the floor beside your torso. Rock gently side to side.",
+  "Legs-Up-the-Wall": "Sit close to a wall and swing your legs up so they rest vertically against it. Let your arms rest at your sides, palms up. Relax your hips and breathe slowly. This gently stretches the hamstrings and calms the nervous system.",
 };

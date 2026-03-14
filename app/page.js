@@ -9,7 +9,9 @@ import WorkoutComplete from "./components/WorkoutComplete";
 import BottomNav from "./components/BottomNav";
 import CalendarScreen from "./components/CalendarScreen";
 import SettingsScreen from "./components/SettingsScreen";
-import { workoutPlans } from "./lib/workoutData";
+import { workoutPlans, recoveryPlans } from "./lib/workoutData";
+
+const allPlans = [...workoutPlans, ...recoveryPlans];
 
 function loadStorage(key, fallback) {
   if (typeof window === 'undefined') return fallback;
@@ -22,9 +24,11 @@ export default function Home() {
   const [activePlanId, setActivePlanId] = useState(() => loadStorage("activePlanId", workoutPlans[0].id));
   const [completedCircuits, setCompletedCircuits] = useState([]);
   const [workoutHistory, setWorkoutHistory] = useState(() => loadStorage("workoutHistory", []));
+  const [recoveryHistory, setRecoveryHistory] = useState(() => loadStorage("recoveryHistory", []));
   const [mounted, setMounted] = useState(false);
 
-  const activePlan = workoutPlans.find(p => p.id === activePlanId) ?? workoutPlans[0];
+  const activePlan = allPlans.find(p => p.id === activePlanId) ?? workoutPlans[0];
+  const isRecoveryPlan = activePlan.type === "recovery";
   const circuits = activePlan.circuits;
   const [activeCircuitId, setActiveCircuitId] = useState(circuits[0].id);
   const activeCircuit = circuits.find(c => c.id === activeCircuitId) ?? circuits[0];
@@ -33,8 +37,10 @@ export default function Home() {
     setMounted(true);
     const storedPlanId = loadStorage("activePlanId", workoutPlans[0].id);
     const storedHistory = loadStorage("workoutHistory", []);
+    const storedRecovery = loadStorage("recoveryHistory", []);
     setActivePlanId(storedPlanId);
     setWorkoutHistory(storedHistory);
+    setRecoveryHistory(storedRecovery);
   }, []);
 
   useEffect(() => {
@@ -48,6 +54,12 @@ export default function Home() {
       localStorage.setItem("workoutHistory", JSON.stringify(workoutHistory));
     }
   }, [workoutHistory, mounted]);
+
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem("recoveryHistory", JSON.stringify(recoveryHistory));
+    }
+  }, [recoveryHistory, mounted]);
 
   const handleStartWorkout = () => setView("dashboard");
 
@@ -63,7 +75,11 @@ export default function Home() {
     setCompletedCircuits(updated);
     if (updated.length === circuits.length) {
       const today = new Date().toISOString().slice(0, 10);
-      setWorkoutHistory(prev => prev.includes(today) ? prev : [...prev, today]);
+      if (isRecoveryPlan) {
+        setRecoveryHistory(prev => prev.includes(today) ? prev : [...prev, today]);
+      } else {
+        setWorkoutHistory(prev => prev.includes(today) ? prev : [...prev, today]);
+      }
       setView("complete");
     } else {
       const nextCircuit = circuits.find(c => !updated.includes(c.id));
@@ -80,7 +96,7 @@ export default function Home() {
 
   const handleSelectPlan = (planId) => {
     setActivePlanId(planId);
-    const plan = workoutPlans.find(p => p.id === planId);
+    const plan = allPlans.find(p => p.id === planId);
     setActiveCircuitId(plan.circuits[0].id);
     setCompletedCircuits([]);
   };
@@ -121,12 +137,18 @@ export default function Home() {
       {view === "timer" && activeCircuit && (
         <TimerScreen
           circuit={activeCircuit}
+          isRecovery={isRecoveryPlan}
           onComplete={handleCircuitComplete}
           onBack={() => setView("circuit-detail")}
         />
       )}
-      {view === "complete" && <WorkoutComplete onRestart={handleRestart} />}
-      {view === "calendar" && <CalendarScreen workoutHistory={workoutHistory} />}
+      {view === "complete" && <WorkoutComplete onRestart={handleRestart} isRecovery={isRecoveryPlan} />}
+      {view === "calendar" && (
+        <CalendarScreen
+          workoutHistory={workoutHistory}
+          recoveryHistory={recoveryHistory}
+        />
+      )}
       {view === "settings" && (
         <SettingsScreen activePlanId={activePlanId} onSelectPlan={handleSelectPlan} />
       )}

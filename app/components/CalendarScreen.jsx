@@ -26,14 +26,15 @@ function getCalendarGrid(year, month) {
   return days;
 }
 
-export default function CalendarScreen({ workoutHistory }) {
+export default function CalendarScreen({ workoutHistory, recoveryHistory = [] }) {
   const now = new Date();
   const [viewYear, setViewYear] = useState(now.getFullYear());
   const [viewMonth, setViewMonth] = useState(now.getMonth());
 
   const grid = getCalendarGrid(viewYear, viewMonth);
   const todayStr = now.toISOString().slice(0, 10);
-  const historySet = new Set(workoutHistory);
+  const workoutSet = new Set(workoutHistory);
+  const recoverySet = new Set(recoveryHistory);
 
   const prevMonth = () => {
     if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11); }
@@ -49,14 +50,21 @@ export default function CalendarScreen({ workoutHistory }) {
     return y === viewYear && m - 1 === viewMonth;
   }).length;
 
+  const monthRecovery = recoveryHistory.filter(d => {
+    const [y, m] = d.split("-").map(Number);
+    return y === viewYear && m - 1 === viewMonth;
+  }).length;
+
+  const totalAll = workoutHistory.length + recoveryHistory.length;
+
   return (
     <div className="screen calendar-screen">
       <div className="calendar-header">
         <h1 className="calendar-title">Workout History</h1>
         <p className="calendar-subtitle">
-          {workoutHistory.length === 0
+          {totalAll === 0
             ? "Complete your first workout to start tracking!"
-            : `${workoutHistory.length} workout${workoutHistory.length === 1 ? "" : "s"} completed`}
+            : `${workoutHistory.length} workout${workoutHistory.length === 1 ? "" : "s"} · ${recoveryHistory.length} recovery`}
         </p>
       </div>
 
@@ -85,7 +93,8 @@ export default function CalendarScreen({ workoutHistory }) {
               ? `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(cell.day).padStart(2, "0")}`
               : null;
             const isToday = dateStr === todayStr;
-            const isWorkout = dateStr && historySet.has(dateStr);
+            const isWorkout = dateStr && workoutSet.has(dateStr);
+            const isRecovery = dateStr && recoverySet.has(dateStr);
             return (
               <div
                 key={idx}
@@ -94,44 +103,56 @@ export default function CalendarScreen({ workoutHistory }) {
                   !cell.current ? "cal-day--other" : "",
                   isToday ? "cal-day--today" : "",
                   isWorkout ? "cal-day--workout" : "",
+                  isRecovery && !isWorkout ? "cal-day--recovery" : "",
                 ].filter(Boolean).join(" ")}
               >
                 {cell.day}
                 {isWorkout && <div className="cal-day-dot" />}
+                {isRecovery && <div className="cal-day-dot cal-day-dot--recovery" />}
               </div>
             );
           })}
         </div>
 
-        {monthWorkouts > 0 && (
+        {(monthWorkouts > 0 || monthRecovery > 0) && (
           <div className="calendar-month-count">
-            {monthWorkouts} workout{monthWorkouts !== 1 ? "s" : ""} this month
+            {monthWorkouts > 0 && `${monthWorkouts} workout${monthWorkouts !== 1 ? "s" : ""}`}
+            {monthWorkouts > 0 && monthRecovery > 0 && " · "}
+            {monthRecovery > 0 && `${monthRecovery} recovery`}
+            {" this month"}
           </div>
         )}
+
+        <div className="calendar-legend">
+          <div className="legend-item">
+            <div className="legend-dot" />
+            <span>Workout</span>
+          </div>
+          <div className="legend-item">
+            <div className="legend-dot legend-dot--recovery" />
+            <span>Recovery</span>
+          </div>
+        </div>
       </div>
 
-      {workoutHistory.length > 0 && (
+      {totalAll > 0 && (
         <div className="calendar-stats">
           <div className="cal-stat">
             <div className="cal-stat-value">{workoutHistory.length}</div>
-            <div className="cal-stat-label">Total</div>
+            <div className="cal-stat-label">Workouts</div>
           </div>
           <div className="cal-stat-divider" />
           <div className="cal-stat">
-            <div className="cal-stat-value">
-              {workoutHistory.filter(d => {
-                const [y, m] = d.split("-").map(Number);
-                return y === now.getFullYear() && m - 1 === now.getMonth();
-              }).length}
-            </div>
-            <div className="cal-stat-label">This Month</div>
+            <div className="cal-stat-value cal-stat-value--recovery">{recoveryHistory.length}</div>
+            <div className="cal-stat-label">Recovery</div>
           </div>
           <div className="cal-stat-divider" />
           <div className="cal-stat">
             <div className="cal-stat-value">
               {(() => {
-                if (workoutHistory.length < 2) return 1;
-                const sorted = [...workoutHistory].sort();
+                const allDates = [...new Set([...workoutHistory, ...recoveryHistory])];
+                if (allDates.length < 2) return allDates.length;
+                const sorted = allDates.sort();
                 let streak = 1;
                 let max = 1;
                 for (let i = 1; i < sorted.length; i++) {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from "react";
-import { WORK_DURATION, REST_DURATION, ROUND_REST_DURATION, ROUNDS_PER_CIRCUIT } from "../lib/workoutData";
+import { WORK_DURATION, REST_DURATION, ROUND_REST_DURATION, ROUNDS_PER_CIRCUIT, RECOVERY_ROUNDS, RECOVERY_WORK_DURATION } from "../lib/workoutData";
 
 function tone(ctx, freq, startTime, durationSec, gainValue = 0.28) {
   const osc = ctx.createOscillator();
@@ -35,32 +35,38 @@ function playCountdownBeep(ctx) {
   tone(ctx, 880, ctx.currentTime, 0.07, 0.18);
 }
 
-function buildSequence(exercises) {
+function buildSequence(exercises, isRecovery) {
+  const rounds = isRecovery ? RECOVERY_ROUNDS : ROUNDS_PER_CIRCUIT;
   const sequence = [];
-  for (let round = 1; round <= ROUNDS_PER_CIRCUIT; round++) {
+  for (let round = 1; round <= rounds; round++) {
     exercises.forEach((ex, idx) => {
       sequence.push({ type: "work", exercise: ex, round, exerciseIndex: idx });
-      const isLastOfCircuit = round === ROUNDS_PER_CIRCUIT && idx === exercises.length - 1;
-      if (!isLastOfCircuit) {
-        const isLastOfRound = idx === exercises.length - 1;
-        sequence.push({ type: "rest", exercise: ex, nextExercise: exercises[idx + 1] || exercises[0], round, exerciseIndex: idx, betweenRounds: isLastOfRound });
+      if (!isRecovery) {
+        const isLastOfCircuit = round === rounds && idx === exercises.length - 1;
+        if (!isLastOfCircuit) {
+          const isLastOfRound = idx === exercises.length - 1;
+          sequence.push({ type: "rest", exercise: ex, nextExercise: exercises[idx + 1] || exercises[0], round, exerciseIndex: idx, betweenRounds: isLastOfRound });
+        }
       }
     });
   }
   return sequence;
 }
 
-function CircularProgress({ progress, phase }) {
+function CircularProgress({ progress, phase, isRecovery }) {
   const radius = 90;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - progress * circumference;
+  const strokeColor = isRecovery
+    ? "var(--ring-recovery)"
+    : phase === "work" ? "var(--ring-work)" : "var(--ring-rest)";
   return (
     <svg className="timer-ring" viewBox="0 0 200 200">
       <circle cx="100" cy="100" r={radius} fill="none" stroke="var(--ring-track)" strokeWidth="12" />
       <circle
         cx="100" cy="100" r={radius}
         fill="none"
-        stroke={phase === "work" ? "var(--ring-work)" : "var(--ring-rest)"}
+        stroke={strokeColor}
         strokeWidth="12"
         strokeLinecap="round"
         strokeDasharray={circumference}
@@ -72,8 +78,8 @@ function CircularProgress({ progress, phase }) {
   );
 }
 
-export default function TimerScreen({ circuit, onComplete, onBack }) {
-  const sequence = useRef(buildSequence(circuit.exercises));
+export default function TimerScreen({ circuit, isRecovery = false, onComplete, onBack }) {
+  const sequence = useRef(buildSequence(circuit.exercises, isRecovery));
   const [stepIndex, setStepIndex] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -91,6 +97,9 @@ export default function TimerScreen({ circuit, onComplete, onBack }) {
 
   const audioCtxRef = useRef(null);
   const lastCountdownSecRef = useRef(null);
+
+  const workDuration = isRecovery ? RECOVERY_WORK_DURATION : WORK_DURATION;
+  const rounds = isRecovery ? RECOVERY_ROUNDS : ROUNDS_PER_CIRCUIT;
 
   const tickRef = useRef(null);
   tickRef.current = () => {
@@ -127,7 +136,7 @@ export default function TimerScreen({ circuit, onComplete, onBack }) {
   const startStep = (index) => {
     const step = sequence.current[index];
     const restDuration = step.betweenRounds ? ROUND_REST_DURATION : REST_DURATION;
-    const stepDuration = step.type === "work" ? WORK_DURATION : restDuration;
+    const stepDuration = step.type === "work" ? workDuration : restDuration;
     const durationMs = stepDuration * 1000;
     stepIndexRef.current = index;
     stepDurationRef.current = durationMs;
@@ -190,7 +199,6 @@ export default function TimerScreen({ circuit, onComplete, onBack }) {
 
   const currentStep = sequence.current[stepIndex];
   const phase = currentStep?.type || "work";
-  const duration = phase === "work" ? WORK_DURATION : REST_DURATION;
 
   const workSteps = sequence.current.filter((s) => s.type === "work");
   const completedSets = workSteps.filter((_, i) => {
@@ -200,8 +208,10 @@ export default function TimerScreen({ circuit, onComplete, onBack }) {
 
   const nextStep = sequence.current[stepIndex + 1];
 
+  const phaseLabel = isRecovery ? "STRETCH" : phase === "work" ? "WORK" : "REST";
+
   return (
-    <div className={`screen timer-screen timer-screen--${phase}`}>
+    <div className={`screen timer-screen timer-screen--${isRecovery ? "recovery" : phase}`}>
       <button className="btn-back" onClick={onBack}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="15 18 9 12 15 6" />
@@ -213,14 +223,14 @@ export default function TimerScreen({ circuit, onComplete, onBack }) {
         <h2 className="timer-circuit-name">{circuit.name}</h2>
         {isRunning && (
           <div className="timer-set-counter">
-            Set {completedSets + 1} of {workSteps.length}
+            {isRecovery ? `Stretch ${completedSets + 1} of ${workSteps.length}` : `Set ${completedSets + 1} of ${workSteps.length}`}
           </div>
         )}
       </div>
 
-      {isRunning && (
+      {isRunning && !isRecovery && (
         <div className="round-badges">
-          {Array.from({ length: ROUNDS_PER_CIRCUIT }, (_, i) => {
+          {Array.from({ length: rounds }, (_, i) => {
             const roundNum = i + 1;
             const isCurrentRound = currentStep?.round === roundNum;
             const isPastRound = currentStep && currentStep.round > roundNum;
@@ -245,12 +255,12 @@ export default function TimerScreen({ circuit, onComplete, onBack }) {
         ) : (
           <>
             <div className="timer-ring-container">
-              <CircularProgress progress={progress} phase={phase} />
+              <CircularProgress progress={progress} phase={phase} isRecovery={isRecovery} />
               <div className="timer-ring-inner">
-                <div className={`timer-phase-label timer-phase-label--${phase}`}>
-                  {phase === "work" ? "WORK" : "REST"}
+                <div className={`timer-phase-label timer-phase-label--${isRecovery ? "recovery" : phase}`}>
+                  {phaseLabel}
                 </div>
-                <div className="timer-countdown">{displayTime ?? duration}</div>
+                <div className="timer-countdown">{displayTime ?? workDuration}</div>
                 <div className="timer-unit">seconds</div>
               </div>
             </div>
@@ -259,7 +269,7 @@ export default function TimerScreen({ circuit, onComplete, onBack }) {
               {phase === "work" ? (
                 <>
                   <div className="timer-exercise-name">{currentStep?.exercise}</div>
-                  <div className="timer-round-tag">Round {currentStep?.round}</div>
+                  {!isRecovery && <div className="timer-round-tag">Round {currentStep?.round}</div>}
                 </>
               ) : (
                 <div className="timer-rest-info">
@@ -278,14 +288,14 @@ export default function TimerScreen({ circuit, onComplete, onBack }) {
             <div key={i} className="exercise-dot-group">
               <div className="exercise-dot-label">{circuit.labels?.[i] ?? ex.split(" ").slice(-1)[0]}</div>
               <div className="exercise-dot-row">
-                {Array.from({ length: ROUNDS_PER_CIRCUIT }, (_, r) => {
+                {Array.from({ length: rounds }, (_, r) => {
                   const rNum = r + 1;
                   let dotState = "pending";
                   if (rNum < (currentStep?.round ?? 1)) dotState = "done";
                   else if (rNum === (currentStep?.round ?? 1)) {
                     if (phase === "work") {
                       if (currentStep.exerciseIndex > i) dotState = "done";
-                      else if (currentStep.exerciseIndex === i) dotState = "active";
+                      else if (currentStep.exerciseIndex === i) dotState = isRecovery ? "recovery" : "active";
                     } else {
                       if (currentStep.exerciseIndex >= i) dotState = "done";
                     }
