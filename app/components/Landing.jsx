@@ -12,7 +12,7 @@ export default function Landing({ onStart }) {
         <div className="landing-details">
           <div className="detail-pill">
             <span className="detail-label">Work</span>
-            <span className="detail-value">45s</span>
+            <span className="detail-value">35s</span>
           </div>
           <div className="detail-pill">
             <span className="detail-label">Rest</span>
