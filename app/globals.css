@@ -229,6 +229,28 @@ button {
   padding-top: 12px;
 }
 
+.workout-type-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 99px;
+  margin-bottom: 8px;
+}
+
+.workout-type-tag--workout {
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface-2));
+  color: var(--accent);
+}
+
+.workout-type-tag--recovery {
+  background: color-mix(in srgb, var(--orange) 14%, var(--surface-2));
+  color: var(--orange);
+}
+
 .dashboard-title {
   font-size: 28px;
   font-weight: 800;
@@ -272,6 +294,46 @@ button {
 
 .circuit-card--active {
   border-color: var(--accent);
+}
+
+/* Workout (purple) theme */
+.circuit-card--workout:not(.circuit-card--completed) {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent) 4%, var(--surface));
+}
+
+.circuit-card--workout:not(.circuit-card--completed):hover,
+.circuit-card--workout.circuit-card--active:not(.circuit-card--completed) {
+  border-color: var(--accent);
+}
+
+.circuit-card--workout:not(.circuit-card--completed) .exercise-number {
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface-2));
+  color: var(--accent);
+}
+
+.circuit-card--workout:not(.circuit-card--completed) .exercise-name--btn:hover {
+  color: var(--accent);
+}
+
+/* Recovery (orange) theme */
+.circuit-card--recovery:not(.circuit-card--completed) {
+  border-color: color-mix(in srgb, var(--orange) 35%, var(--border));
+  background: color-mix(in srgb, var(--orange) 4%, var(--surface));
+}
+
+.circuit-card--recovery:not(.circuit-card--completed):hover,
+.circuit-card--recovery.circuit-card--active:not(.circuit-card--completed) {
+  border-color: var(--orange);
+}
+
+.circuit-card--recovery:not(.circuit-card--completed) .exercise-number {
+  background: color-mix(in srgb, var(--orange) 14%, var(--surface-2));
+  color: var(--orange);
+}
+
+.circuit-card--recovery:not(.circuit-card--completed) .exercise-name--btn:hover {
+  color: var(--orange);
 }
 
 .circuit-card-header {

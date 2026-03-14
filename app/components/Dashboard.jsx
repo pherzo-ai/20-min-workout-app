@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from "react";
-import { ROUNDS_PER_CIRCUIT, exerciseDescriptions } from "../lib/workoutData";
+import { ROUNDS_PER_CIRCUIT, RECOVERY_ROUNDS, exerciseDescriptions } from "../lib/workoutData";
 
 const DB_BASE = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/";
 const WGER_BASE = "https://wger.de/media/exercise-images/";
@@ -147,15 +147,21 @@ function ExerciseModal({ exercise, onClose }) {
   );
 }
 
-export default function Dashboard({ circuits, completedCircuits, activeCircuit, onSelectCircuit }) {
+export default function Dashboard({ circuits, completedCircuits, activeCircuit, onSelectCircuit, isRecovery }) {
   const [selectedExercise, setSelectedExercise] = useState(null);
+  const rounds = isRecovery ? RECOVERY_ROUNDS : ROUNDS_PER_CIRCUIT;
 
   return (
     <div className="screen dashboard-screen">
       <div className="dashboard-header">
+        <span className={`workout-type-tag ${isRecovery ? "workout-type-tag--recovery" : "workout-type-tag--workout"}`}>
+          {isRecovery ? "Recovery" : "Workout"}
+        </span>
         <h1 className="dashboard-title">Your Workout</h1>
         <p className="dashboard-subtitle">
-          Complete all 3 circuits to finish your 20-minute workout
+          {isRecovery
+            ? "Move through each circuit at your own pace"
+            : "Complete all 3 circuits to finish your 20-minute workout"}
         </p>
       </div>
 
@@ -167,7 +173,7 @@ export default function Dashboard({ circuits, completedCircuits, activeCircuit, 
           return (
             <div
               key={circuit.id}
-              className={`circuit-card ${isCompleted ? "circuit-card--completed" : ""} ${isCurrent ? "circuit-card--active" : ""}`}
+              className={`circuit-card ${isRecovery ? "circuit-card--recovery" : "circuit-card--workout"} ${isCompleted ? "circuit-card--completed" : ""} ${isCurrent ? "circuit-card--active" : ""}`}
             >
               <div className="circuit-card-header">
                 <div className="circuit-card-title-row">
@@ -181,7 +187,7 @@ export default function Dashboard({ circuits, completedCircuits, activeCircuit, 
                   )}
                 </div>
                 <p className="circuit-card-meta">
-                  {ROUNDS_PER_CIRCUIT} rounds &bull; {circuit.exercises.length} exercises
+                  {rounds} round{rounds !== 1 ? "s" : ""} &bull; {circuit.exercises.length} exercises
                 </p>
               </div>
               <ul className="exercise-list">

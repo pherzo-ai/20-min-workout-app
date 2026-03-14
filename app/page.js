@@ -125,11 +125,13 @@ export default function Home() {
           completedCircuits={completedCircuits}
           activeCircuit={activeCircuitId}
           onSelectCircuit={handleSelectCircuit}
+          isRecovery={isRecoveryPlan}
         />
       )}
       {view === "circuit-detail" && activeCircuit && (
         <CircuitScreen
           circuit={activeCircuit}
+          isRecovery={isRecoveryPlan}
           onStart={handleStartCircuit}
           onBack={() => setView("dashboard")}
         />

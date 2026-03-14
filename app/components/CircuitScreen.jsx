@@ -1,9 +1,10 @@
 'use client';
 
-import { ROUNDS_PER_CIRCUIT, WORK_DURATION, REST_DURATION } from "../lib/workoutData";
+import { ROUNDS_PER_CIRCUIT, RECOVERY_ROUNDS, WORK_DURATION, REST_DURATION } from "../lib/workoutData";
 
-export default function CircuitScreen({ circuit, onStart, onBack }) {
-  const totalSets = circuit.exercises.length * ROUNDS_PER_CIRCUIT;
+export default function CircuitScreen({ circuit, isRecovery, onStart, onBack }) {
+  const rounds = isRecovery ? RECOVERY_ROUNDS : ROUNDS_PER_CIRCUIT;
+  const totalSets = circuit.exercises.length * rounds;
   const totalWorkSeconds = totalSets * WORK_DURATION + (totalSets - 1) * REST_DURATION;
   const totalMinutes = Math.floor(totalWorkSeconds / 60);
   const totalSeconds = totalWorkSeconds % 60;
@@ -20,7 +21,7 @@ export default function CircuitScreen({ circuit, onStart, onBack }) {
       <div className="circuit-screen-header">
         <h1 className="circuit-screen-title">{circuit.name}</h1>
         <p className="circuit-screen-meta">
-          {ROUNDS_PER_CIRCUIT} rounds &bull; ~{totalMinutes}m {totalSeconds > 0 ? `${totalSeconds}s` : ""}
+          {rounds} round{rounds !== 1 ? "s" : ""} &bull; ~{totalMinutes}m {totalSeconds > 0 ? `${totalSeconds}s` : ""}
         </p>
       </div>
 
@@ -35,7 +36,7 @@ export default function CircuitScreen({ circuit, onStart, onBack }) {
         </div>
         <div className="info-pill">
           <span className="info-label">Rounds</span>
-          <span className="info-value">{ROUNDS_PER_CIRCUIT}x</span>
+          <span className="info-value">{rounds}x</span>
         </div>
       </div>
 
@@ -50,7 +51,7 @@ export default function CircuitScreen({ circuit, onStart, onBack }) {
             </li>
           ))}
         </ol>
-        <p className="repeat-note">Repeat the above {ROUNDS_PER_CIRCUIT} times</p>
+        {rounds > 1 && <p className="repeat-note">Repeat the above {rounds} times</p>}
       </div>
 
       <button className="btn btn-primary btn-large circuit-go-btn" onClick={onStart}>
