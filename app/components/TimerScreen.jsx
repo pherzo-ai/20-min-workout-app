@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from "react";
-import { WORK_DURATION, REST_DURATION, ROUNDS_PER_CIRCUIT } from "../lib/workoutData";
+import { WORK_DURATION, REST_DURATION, ROUND_REST_DURATION, ROUNDS_PER_CIRCUIT } from "../lib/workoutData";
 
 function tone(ctx, freq, startTime, durationSec, gainValue = 0.28) {
   const osc = ctx.createOscillator();
@@ -40,9 +40,10 @@ function buildSequence(exercises) {
   for (let round = 1; round <= ROUNDS_PER_CIRCUIT; round++) {
     exercises.forEach((ex, idx) => {
       sequence.push({ type: "work", exercise: ex, round, exerciseIndex: idx });
-      const isLast = round === ROUNDS_PER_CIRCUIT && idx === exercises.length - 1;
-      if (!isLast) {
-        sequence.push({ type: "rest", exercise: ex, nextExercise: exercises[idx + 1] || exercises[0], round, exerciseIndex: idx });
+      const isLastOfCircuit = round === ROUNDS_PER_CIRCUIT && idx === exercises.length - 1;
+      if (!isLastOfCircuit) {
+        const isLastOfRound = idx === exercises.length - 1;
+        sequence.push({ type: "rest", exercise: ex, nextExercise: exercises[idx + 1] || exercises[0], round, exerciseIndex: idx, betweenRounds: isLastOfRound });
       }
     });
   }
@@ -125,7 +126,9 @@ export default function TimerScreen({ circuit, onComplete, onBack }) {
 
   const startStep = (index) => {
     const step = sequence.current[index];
-    const durationMs = (step.type === "work" ? WORK_DURATION : REST_DURATION) * 1000;
+    const restDuration = step.betweenRounds ? ROUND_REST_DURATION : REST_DURATION;
+    const stepDuration = step.type === "work" ? WORK_DURATION : restDuration;
+    const durationMs = stepDuration * 1000;
     stepIndexRef.current = index;
     stepDurationRef.current = durationMs;
     stepStartRef.current = performance.now();
@@ -134,7 +137,7 @@ export default function TimerScreen({ circuit, onComplete, onBack }) {
     lastCountdownSecRef.current = null;
     setStepIndex(index);
     setProgress(1);
-    setDisplayTime(step.type === "work" ? WORK_DURATION : REST_DURATION);
+    setDisplayTime(stepDuration);
     cancelRaf();
 
     const ctx = audioCtxRef.current;

@@ -1,5 +1,6 @@
-export const WORK_DURATION = 45;
+export const WORK_DURATION = 35;
 export const REST_DURATION = 15;
+export const ROUND_REST_DURATION = 25;
 export const ROUNDS_PER_CIRCUIT = 2;
 
 export const workoutPlans = [
