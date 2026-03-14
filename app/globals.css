@@ -517,6 +517,11 @@ button {
   color: var(--green);
 }
 
+.ep--stretch {
+  background: color-mix(in srgb, var(--ring-recovery) 10%, var(--surface-2));
+  color: var(--ring-recovery);
+}
+
 .circuit-start-btn {
   width: 100%;
 }

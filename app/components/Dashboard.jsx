@@ -5,6 +5,7 @@ import { ROUNDS_PER_CIRCUIT, exerciseDescriptions } from "../lib/workoutData";
 
 const DB_BASE = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/";
 const EXERCISE_IMAGES = {
+  // Work exercises
   "Dumbbell Goblet Squat":              "Goblet_Squat",
   "Push Ups":                           "Pushups",
   "Dumbbell Bench Press":               "Dumbbell_Bench_Press",
@@ -34,16 +35,51 @@ const EXERCISE_IMAGES = {
   "Plank to Downward Dog":              "Plank",
   "Side Plank Hip Dips":                "Push_Up_to_Side_Plank",
   "Dead Bug":                           "Dead_Bug",
+  // Stretches – Full Body Stretch plan
+  "Chest Opener Stretch":               "Chest_And_Front_Of_Shoulder_Stretch",
+  "Overhead Tricep Stretch":            "Overhead_Triceps",
+  "Cross-Body Shoulder Stretch":        "Shoulder_Stretch",
+  "Neck Side Stretch":                  "Side_Neck_Stretch",
+  "Standing Hip Flexor Stretch":        "Standing_Hip_Flexors",
+  "Standing Hamstring Stretch":         "Standing_Hamstring_and_Calf_Stretch",
+  "Standing Quad Stretch":              "Quad_Stretch",
+  "Seated Calf Stretch":                "Seated_Calf_Stretch",
+  "Cat-Cow Stretch":                    "Cat_Stretch",
+  "Child's Pose":                       "Childs_Pose",
+  "Seated Spinal Twist":                "Spinal_Stretch",
+  "Downward Dog Hold":                  "Inchworm",
+  // Stretches – Mobility Flow plan
+  "Pigeon Pose":                        "Lying_Glute",
+  "Figure-Four Stretch":                "Ankle_On_The_Knee",
+  "Deep Squat Hold":                    "Sit_Squats",
+  "Hip Circle Stretch":                 "Standing_Hip_Circles",
+  "Lat Stretch at Wall":                "Overhead_Lat",
+  "Thoracic Rotation Stretch":          "Torso_Rotation",
+  "Doorway Chest Stretch":              "One_Arm_Against_Wall",
+  "Supine Knee-to-Chest":               "One_Knee_To_Chest",
+  "Supine Spinal Twist":                "Lying_Crossover",
+  "Happy Baby Pose":                    "Lying_Bent_Leg_Groin",
 };
 
 function ExercisePreviewPlaceholder({ exercise }) {
   const n = exercise.toLowerCase();
+  const isStretch = /stretch|pose|hold|thread|legs.up|needle/.test(n);
   const isCardio = /jump|rope|jacks|knees|burpee|crawl|climber/.test(n);
   const isCore = /plank|twist|crunch|bicycle|v-up|dead bug|raises|bridge/.test(n);
 
   return (
-    <div className={`exercise-preview-placeholder ${isCardio ? "ep--cardio" : isCore ? "ep--core" : "ep--strength"}`}>
-      {isCardio ? (
+    <div className={`exercise-preview-placeholder ${isStretch ? "ep--stretch" : isCardio ? "ep--cardio" : isCore ? "ep--core" : "ep--strength"}`}>
+      {isStretch ? (
+        /* seated forward-fold figure */
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="10" r="4" />
+          <path d="M12 14 Q12 24 30 28" />
+          <line x1="8" y1="28" x2="38" y2="28" />
+          <line x1="30" y1="28" x2="38" y2="28" />
+          <line x1="8" y1="28" x2="8" y2="40" />
+          <line x1="22" y1="28" x2="22" y2="40" />
+        </svg>
+      ) : isCardio ? (
         <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="24" cy="9" r="4" />
           <line x1="24" y1="13" x2="24" y2="27" />
