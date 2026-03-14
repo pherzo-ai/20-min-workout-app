@@ -4,6 +4,9 @@ import { useState } from "react";
 import { ROUNDS_PER_CIRCUIT, exerciseDescriptions } from "../lib/workoutData";
 
 const DB_BASE = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/";
+const WGER_BASE = "https://wger.de/media/exercise-images/";
+
+// Values starting with "wger:" use WGER_BASE; plain strings use DB_BASE with /0.jpg appended.
 const EXERCISE_IMAGES = {
   // Work exercises
   "Dumbbell Goblet Squat":              "Goblet_Squat",
@@ -35,22 +38,21 @@ const EXERCISE_IMAGES = {
   "Plank to Downward Dog":              "Plank",
   "Side Plank Hip Dips":                "Push_Up_to_Side_Plank",
   "Dead Bug":                           "Dead_Bug",
-  // Stretches – Full Body Stretch plan
+  // Stretches – Full Body Stretch plan (free-exercise-db where name closely matches)
   "Chest Opener Stretch":               "Chest_And_Front_Of_Shoulder_Stretch",
   "Overhead Tricep Stretch":            "Overhead_Triceps",
   "Cross-Body Shoulder Stretch":        "Shoulder_Stretch",
   "Neck Side Stretch":                  "Side_Neck_Stretch",
-  "Standing Hip Flexor Stretch":        "Standing_Hip_Flexors",
+  "Standing Hip Flexor Stretch":        "wger:1867/767631e5-10d2-46b8-b03f-cc298f96963b.png",
   "Standing Hamstring Stretch":         "Standing_Hamstring_and_Calf_Stretch",
-  "Standing Quad Stretch":              "Quad_Stretch",
+  "Standing Quad Stretch":              "wger:1873/c0ed299b-6d87-4d90-885d-bb3b5d85f1eb.png",
   "Seated Calf Stretch":                "Seated_Calf_Stretch",
   "Cat-Cow Stretch":                    "Cat_Stretch",
   "Child's Pose":                       "Childs_Pose",
   "Seated Spinal Twist":                "Spinal_Stretch",
-  "Downward Dog Hold":                  "Inchworm",
   // Stretches – Mobility Flow plan
-  "Pigeon Pose":                        "Lying_Glute",
-  "Figure-Four Stretch":                "Ankle_On_The_Knee",
+  "Pigeon Pose":                        "wger:1872/df982df1-512a-4eb9-acd9-68cc1c265df6.png",
+  "Figure-Four Stretch":                "wger:1869/c49187bd-9f90-4a7a-b25e-1d50e857a104.png",
   "Deep Squat Hold":                    "Sit_Squats",
   "Hip Circle Stretch":                 "Standing_Hip_Circles",
   "Lat Stretch at Wall":                "Overhead_Lat",
@@ -111,7 +113,11 @@ function ExercisePreviewPlaceholder({ exercise }) {
 
 function ExerciseModal({ exercise, onClose }) {
   const imageId = EXERCISE_IMAGES[exercise];
-  const imageUrl = imageId ? `${DB_BASE}${imageId}/0.jpg` : null;
+  const imageUrl = imageId
+    ? imageId.startsWith("wger:")
+      ? `${WGER_BASE}${imageId.slice(5)}`
+      : `${DB_BASE}${imageId}/0.jpg`
+    : null;
   const description = exerciseDescriptions[exercise] ?? "A great exercise for your full-body workout.";
 
   return (
